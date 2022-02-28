@@ -82,6 +82,27 @@ type IngressSpec struct {
 	// Note that if there are no RequiredHSTSPolicies, any HSTS Policy annotation on the route is valid.
 	// +optional
 	RequiredHSTSPolicies []RequiredHSTSPolicy `json:"requiredHSTSPolicies,omitempty"`
+
+	// IngressPlacement controls whether by default the ingress router will be placed on the control plane nodes or the
+	// worker nodes. More specifically, it controls the defaulting behavior of the IngressController replicas and
+	// nodePlacement parameters.
+	//
+	// The defaulting behavior of the replicas parameter follows one of the topologies in the Infrastructure CR's
+	// status. The choice of which topology is being followed depends on the IngressPlacement parameter. If
+	// IngressPlacement is set to ControlPlane, the default IngressController number of replicas will follow the
+	// ControlPlaneTopology. Otherwise, if IngressPlacement is set to Workers, the number of replicas will follow the
+	// InfrastructureTopology. In both cases, the number of replicas will be 2 if that topology is set to
+	// HighlyAvailable and 1 if SingleReplica.
+	//
+	// IngressPlacement may not be set to "ControlPlane" when the cluster's ControlPlaneTopology is set to "External".
+	//
+	// IngressPlacement also controls the defaulting behavior of the IngressController nodePlacement parameter - if set
+	// to ControlPlane, the "node-role.kubernetes.io/master" label will be used by default. Otherwise if set to Workers,
+	// the "node-role.kubernetes.io/worker" label will be used by default.
+	//
+	// +kubebuilder:default=Workers
+	// +kubebuilder:validation:Enum=Workers;ControlPlane
+	IngressPlacement IngressPlacement `json:"ingressPlacement,omitempty"`
 }
 
 // ConsumingUser is an alias for string which we add validation to. Currently only service accounts are supported.
@@ -209,3 +230,10 @@ type IngressList struct {
 
 	Items []Ingress `json:"items"`
 }
+
+type IngressPlacement string
+
+const (
+	ControlPlane IngressPlacement = "ControlPlane"
+	Workers IngressPlacement = "Workers"
+)
